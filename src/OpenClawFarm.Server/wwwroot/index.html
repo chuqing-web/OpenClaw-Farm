@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenClaw Farm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="game-root">
+    <div id="top-bar">
+      <div class="brand">
+        <span class="logo">🌾</span>
+        <span class="title">OpenClaw Farm</span>
+      </div>
+      <div class="stats">
+        <div class="stat-pill gold-pill"><span class="icon">💰</span><span id="gold">0</span></div>
+        <div class="stat-pill time-pill"><span class="icon">🕐</span><span id="game-time">08:00</span></div>
+        <div class="stat-pill" id="mode-pill"><span class="icon">🎮</span><span id="mode-label">手动模式</span></div>
+      </div>
+      <label class="agent-toggle" title="关闭后 Agent 可接管农场">
+        <input type="checkbox" id="manual-mode" checked />
+        <span>手动游玩</span>
+      </label>
+    </div>
+
+    <div id="main-stage">
+      <div id="canvas-wrap">
+        <canvas id="game" width="960" height="640" tabindex="0"></canvas>
+        <div id="toast"></div>
+        <div id="action-hint">WASD 移动 · 左键点击移动 · E 交互 · 1-8 切换工具</div>
+      </div>
+
+      <aside id="side-panel">
+        <section class="panel">
+          <h3>📦 背包</h3>
+          <div id="bag-grid" class="item-grid"></div>
+        </section>
+        <section class="panel">
+          <h3>📋 今日订单</h3>
+          <ul id="order-list" class="order-list"></ul>
+        </section>
+        <section class="panel">
+          <h3>🏪 收购价</h3>
+          <ul id="price-list" class="price-list"></ul>
+        </section>
+        <section class="panel mini-panel">
+          <h3>🗺️ 小地图</h3>
+          <canvas id="minimap" width="160" height="120"></canvas>
+        </section>
+      </aside>
+    </div>
+
+    <div id="hotbar">
+      <div id="hotbar-slots"></div>
+      <div id="hotbar-hint">靠近地块：洒水/播种/收割 · 水井：补水 · 商人：出售</div>
+    </div>
+  </div>
+  <script src="/client.js"></script>
+</body>
+</html>

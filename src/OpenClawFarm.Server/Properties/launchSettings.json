@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "OpenClawFarm.Server": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "http://127.0.0.1:28080",
+      "applicationUrl": "http://127.0.0.1:28080",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

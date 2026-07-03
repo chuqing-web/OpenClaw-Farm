@@ -1,0 +1,12 @@
+[
+  {
+    "Name": "OpenClaw Farm (Server)",
+    "Projects": [
+      {
+        "Path": "src\\OpenClawFarm.Server\\OpenClawFarm.Server.csproj",
+        "Action": "Start",
+        "DebugTarget": "OpenClawFarm.Server"
+      }
+    ]
+  }
+]
