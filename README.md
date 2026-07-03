@@ -8,81 +8,70 @@
 
 ## The farm game built for AI agents — not bolted on afterward
 
-Most “AI gaming” demos stack a chatbot on top of a screenshot tool or a fragile desktop macro. **OpenClaw Farm is different.**
+Most “AI gaming” demos stack a chatbot on a screenshot tool or a fragile desktop macro. **OpenClaw Farm is different.**
 
-It is a playable pixel farm you can enjoy yourself — and a **first-class agent playground** designed from day one for long-running automation. No plugins. No MCP middle layer. No image recognition. Copy a single `.SKILL.md` file, point your OpenClaw agent at `ws://127.0.0.1:28080`, and the loop begins: harvest, water, plant, sell, repeat.
+It is a watchable pixel farm built for **long-running agent automation** from day one: no plugins, no MCP, no image recognition. Copy [`skills/farm_auto.SKILL.md`](skills/farm_auto.SKILL.md), connect to `ws://127.0.0.1:28080`, and the loop begins — farm, mine, fish, chop trees, build, sell, maintain.
 
-You get a real game loop. Your agent gets a real protocol. Everyone stops pretending.
+The browser is a **spectator client**. Movement and interactions must go through **HTTP / WebSocket actions** (or tell your OpenClaw agent in chat to send them).
 
 ---
 
 ## Two players, one world
 
-| You play manually | Your agent plays automatically |
-|-------------------|-------------------------------|
-| WASD through the fields | Reads land state over HTTP |
-| Space to interact with the soil | Sends move / interact / sell over WebSocket |
-| Toggle **Manual Mode** when you want the keyboard | TaskFlow or Cron when you want 24/7 hands-off |
+| You (watch & command) | Agent (executes) |
+|-----------------------|------------------|
+| Canvas view: character, animations, HUD | `GET /agent/state/*` for full world state |
+| Chat: “chop wood”, “deliver cross-line order” | `POST /agent/action` or WebSocket |
+| HUD: gold, triple-line yields, upkeep | `GET /agent/state/action` for busy state + next hint |
 
-Same map. Same crops. Same merchant. **Manual Mode** pauses agent actions so you never fight the keyboard for control.
+Same map, same rules. Actions run **serially** — concurrent requests get “wait for current action” until the previous one finishes.
 
-> *Friday night: you plant strawberries by hand. Saturday morning: the agent finishes what you started.*
+---
+
+## What’s in the game
+
+### Triple-line idle loop
+
+| Route | Features |
+|-------|----------|
+| 🌾 **Farm** | 24 plots, 5 crops, greenhouse / auto sprinkler / harvester, processing factory |
+| ⛏️ **Mine** | 3 layers, stamina / pickaxe / lantern, L3 boss |
+| 🎣 **Fish** | Multiple ponds, bait, dried fish, collectible codex |
+
+Three merchants (crops, ore, fish). **Daily / weekly / festival cross-line orders** push all three routes.
+
+### Forest & construction
+
+- Chop western forest → `crop_wood` (requires `tool_axe`)
+- Sawmill unlocks `crop_plank` processing
+- Buildings: **lumber camp** (+25% wood), **sawmill** (plank recipes)
+- `build_tile`: `wood_fence`, `wood_path`, `lumber_platform`
+
+### Forced upkeep & economy
+
+HUD **🌾⛏️🎣** shows **yield multipliers** (start at 100%; decay toward ~20% if you only idle one route). **🔧 / 🏠** are mine and building durability — they drop each in-game day; use `reinforce_mine`, `repair_buildings`, `feed_pond`, etc.
+
+Daily livestock feed, greenhouse heating, building maintenance, and passive inventory decay keep long AFK runs from being “set and forget forever.”
+
+### Meta systems
+
+Achievements, victory progress, prestige, hybrid seeds, land bonds, decorations, save/load (`POST /api/game/new` · `/api/game/load` · `/api/game/save`).
 
 ---
 
 ## Why agents love this setup
 
 ### Zero deploy overhead
-One Skill file embeds the entire communication stack — WebSocket client, HTTP queries, request matching, auto-reconnect. No gateway restart. No plugin build pipeline.
+One Skill embeds WS/HTTP helpers, busy-wait, and a triple-line cycle template.
 
-### Smallest possible messages
-Plain JSON: `type`, `reqId`, `payload`. No JSON-RPC wrappers. No MCP envelopes. **Less noise in context, lower token burn** — built for thousand-iteration idle loops.
+### Tiny messages
+Plain JSON: `type`, `reqId`, `payload`. HTTP to observe, WS/HTTP to act.
 
-### Read/write split that actually makes sense
-- **HTTP** pulls world state: lands, bag, prices, daily orders
-- **WebSocket** pushes actions and waits for results synchronously
+### Next-step hints after every success
+Responses include `→ next step:` plus `nextHint` / `nextActionId` in `extra` for auto-chaining.
 
-Agents observe first, act second. The game stays responsive.
-
-### Local-only by design
-Everything binds to `127.0.0.1`. No LAN exposure. No public attack surface. Action cooldowns and sell confirmation keep automation from looking like a bot swarm.
-
----
-
-## A living farm, not a JSON spreadsheet
-
-Twelve tilled plots. Three crops — strawberry, wheat, carrot. Soil dries out. Crops wither if neglected. A merchant whose prices shift day to day. Daily orders that reward the crops you actually grow.
-
-The Canvas client shows it all: golden mature plots, blue thirst indicators, a glowing merchant stall, your little pixel farmer walking the rows.
-
-Behind the cute pixels: a full simulation tick, A* pathfinding, inventory, economy, and order fulfillment — the kind of state machine agents need to reason about, not a fake “success: true” button.
-
----
-
-## Three ways to run your agent
-
-### Chat — debug one cycle
-Perfect for tuning logic. Run a single harvest-to-sell loop. Test one `move()` or `interact()` in isolation.
-
-### TaskFlow — true 24/7 hosting
-Isolated background session. Close the chat window; the farm keeps running. Inspect logs when something looks off.
-
-### Cron — scheduled care
-Every 30 minutes for routine upkeep. 11 PM for a bulk sell. Wake the agent only when the farm needs attention — not on your dime every second.
-
-> *Idle games are OpenClaw’s superpower. This is the reference implementation.*
-
----
-
-## Built for builders
-
-| Audience | What you get |
-|----------|--------------|
-| **Agent hackers** | Copy the Skill’s JS transport layer to mining, ranching, or any game that speaks the same protocol |
-| **Game prototypers** | Change crop IDs in one line; swap business logic without touching WebSocket code |
-| **Low-spec hosts** | One long-lived connection, serial actions, minimal bandwidth — runs on the machine you already have |
-
-Open the solution in **Visual Studio 2022**, set a breakpoint in `GameWorld.cs`, press F5. The same server your agent talks to is the one you debug.
+### Local-only
+Binds to `127.0.0.1`. Cooldowns + sell confirmation for sane Cron / TaskFlow runs.
 
 ---
 
@@ -92,48 +81,78 @@ Open the solution in **Visual Studio 2022**, set a breakpoint in `GameWorld.cs`,
 dotnet run --project src/OpenClawFarm.Server
 ```
 
-Open **http://127.0.0.1:28080** — play by hand or unleash the agent.
-
-Copy [`skills/farm_auto.SKILL.md`](skills/farm_auto.SKILL.md) into your OpenClaw skills folder and say:
+1. Open **http://127.0.0.1:28080**
+2. **New game** or **Continue** (session required — otherwise `no_session`)
+3. Copy [`skills/farm_auto.SKILL.md`](skills/farm_auto.SKILL.md) into OpenClaw skills, then:
 
 ```
-Run one full farm cycle: harvest, water, plant, sell.
+Run one triple-line cycle: farm → chop if low on wood → mine → fish → upkeep → sell.
 ```
+
+### Windows single-file build
+
+```powershell
+.\publish.ps1
+# → dist\OpenClawFarm\OpenClawFarm.exe — double-click; exit via tray icon
+```
+
+---
+
+## Agent API cheat sheet
+
+| Purpose | URL |
+|---------|-----|
+| Health | `GET /health` |
+| **Full snapshot (recommended)** | `GET /agent/state/meta` |
+| Busy + next hint | `GET /agent/state/action` |
+| Forest / construction | `GET /agent/state/forest` · `/agent/state/construction` |
+| Execute action | `POST /agent/action` `{ "actionId", "params" }` |
+| WebSocket | `ws://127.0.0.1:28080/ws/agent` |
+
+Start session: `POST /api/game/new` · `POST /api/game/load`
+
+Common actions: `move_to` · `interact` · `chop_tree` · `build_tile` · `process` · `mine_*` · `fish` · `sell_item` · `unlock_building` · `deliver_cross_order` · `reinforce_mine` · `repair_buildings`
+
+Full list: [`skills/farm_auto.SKILL.md`](skills/farm_auto.SKILL.md) and [`docs/PROTOCOL.md`](docs/PROTOCOL.md).
 
 ---
 
 ## Visual Studio 2022
 
-> **Important:** `OpenClawFarm.Core` is a class library — it cannot run alone. Always start **`OpenClawFarm.Server`**.
+> **Important:** Start **`OpenClawFarm.Server`** — Core is a class library and cannot run alone.
 
-1. Double-click **`OpenClawFarm.sln`** to open in Visual Studio 2022
-2. In Solution Explorer, right-click **`OpenClawFarm.Server`** → **Set as Startup Project** (project name turns bold)
-3. Press **F5** (or the green ▶ button) — browser opens http://127.0.0.1:28080
-4. To debug game logic, set breakpoints in `src/OpenClawFarm.Core/Game/GameWorld.cs` etc.
+1. Open **`OpenClawFarm.sln`**
+2. Right-click **`OpenClawFarm.Server`** → **Set as Startup Project**
+3. **F5** → browser opens http://127.0.0.1:28080
+4. Breakpoint in `GameWorld.cs` to debug simulation logic
 
-Requires **.NET 8 SDK** (install from https://dotnet.microsoft.com/download/dotnet/8.0).
-
-**If you see "Cannot start class library project":** you selected `OpenClawFarm.Core` or `OpenClawFarm.Core.Tests` as startup — switch to `OpenClawFarm.Server` as above.
+Requires **.NET 8 SDK**.
 
 ---
 
-## Under the hood
+## Repository layout
 
-| Piece | Role |
-|-------|------|
-| `src/OpenClawFarm.Core/` | C# farm simulation (lands, economy, pathfinding) |
-| `src/OpenClawFarm.Server/` | ASP.NET Core — HTTP + WebSocket + static Canvas client |
-| `skills/farm_auto.SKILL.md` | OpenClaw Agent Skill (embedded JS for WS/HTTP) |
-| `docs/PROTOCOL.md` | Agent API reference |
-| `OpenClawFarm.sln` | Visual Studio 2022 solution |
-
-**Agent endpoints**
-
-| Channel | URL |
-|---------|-----|
-| HTTP state | `http://127.0.0.1:28080/agent/state/*` |
-| WebSocket actions | `ws://127.0.0.1:28080/ws/agent` |
+| Path | Role |
+|------|------|
+| `src/OpenClawFarm.Core/` | Simulation: lands, triple-line, forest, construction, economy, upkeep, saves |
+| `src/OpenClawFarm.Server/` | ASP.NET Core + Canvas client + tray / browser lifecycle |
+| `skills/farm_auto.SKILL.md` | OpenClaw Agent Skill (protocol + cycle templates) |
+| `docs/PROTOCOL.md` | HTTP / WebSocket reference |
+| `tests/OpenClawFarm.Core.Tests/` | Unit tests (`dotnet test`) |
 
 ---
 
-*OpenClaw Farm — play it yourself, or let your agent run it forever. Same game, same protocol, no plugins required.*
+## HUD legend
+
+| Display | Meaning |
+|---------|---------|
+| 💰 | Gold |
+| 🕐 | In-game time |
+| 🌤️ | Season |
+| 🏆 | Victory progress % |
+| 🌾 ⛏️ 🎣 | Route yield multipliers (100% at start; decays if one route dominates) |
+| 🔧 / 🏠 | Mine / building durability (100% at start; drops after in-game days) |
+
+---
+
+*OpenClaw Farm — you watch, your agent works. Same game, same protocol, no plugins required.*
