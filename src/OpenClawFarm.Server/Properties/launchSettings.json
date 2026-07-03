@@ -1,13 +1,25 @@
-{
+﻿{
+
   "profiles": {
-    "OpenClawFarm.Server": {
-      "commandName": "Project",
-      "launchBrowser": true,
-      "launchUrl": "http://127.0.0.1:28080",
-      "applicationUrl": "http://127.0.0.1:28080",
+
+    "OpenClawFarm": {
+
+      "commandName": "Executable",
+
+      "executablePath": "C:/Projects/OpenClaw Farm/src/OpenClawFarm.Server/bin/Debug/net8.0-windows/OpenClawFarm.exe",
+
+      "workingDirectory": "C:/Projects/OpenClaw Farm/src/OpenClawFarm.Server/bin/Debug/net8.0-windows/",
+
+      "launchBrowser": false,
+
       "environmentVariables": {
+
         "ASPNETCORE_ENVIRONMENT": "Development"
+
       }
+
     }
+
   }
+
 }

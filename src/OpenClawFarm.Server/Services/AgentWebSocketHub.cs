@@ -43,7 +43,7 @@ public sealed class AgentWebSocketHub
         {
             var snap = _world!.GetSnapshot();
             await SendJson(ws, new WorldPatch("world_patch", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                snap.Player, snap.Lands, snap.Bag, snap.ManualMode));
+                snap.Player, snap.Lands, snap.Bag));
 
             var buffer = new byte[8192];
             while (ws.State == WebSocketState.Open)
@@ -88,12 +88,15 @@ public sealed class AgentWebSocketHub
         try
         {
             var actionId = msg.Payload.ActionId;
-            _world!.EnsureAgentControl();
             Console.WriteLine($"[Agent] WS action: {actionId}");
-            var result = await ActionExecutor.RunAsync(_world, actionId, msg.Payload.Params ?? new JsonParams());
+            var result = await _world!.ExecuteActionAsync(actionId, msg.Payload.Params ?? new JsonParams());
             if (!result.Success)
                 Console.WriteLine($"[Agent] WS failed: {actionId} -> {result.Message}");
-            await SendJson(ws, new ActionResultMessage("action_result", msg.ReqId, result.Success, result.Message, result.Extra));
+            var extra = new Dictionary<string, object?>(result.Extra ?? new Dictionary<string, object?>())
+            {
+                ["action"] = _world.GetActionState(),
+            };
+            await SendJson(ws, new ActionResultMessage("action_result", msg.ReqId, result.Success, result.Message, extra));
         }
         catch (Exception ex)
         {

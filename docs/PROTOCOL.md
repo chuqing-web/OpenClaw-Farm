@@ -130,7 +130,7 @@ Returns a one-time token required for `sell_item`.
   "player": { "x": 102, "y": 96, "sceneId": "farm_main" },
   "lands": [],
   "bag": { "gold": 100, "items": [] },
-  "manualMode": false
+  "gameHour": 8
 }
 ```
 

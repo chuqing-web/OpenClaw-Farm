@@ -52,21 +52,10 @@ public class GameWorldTests
     public async Task Sell_requires_confirm_token()
     {
         var world = new GameWorld();
-        world.SetManualMode(false);
         world.Inventory.AddItem(ItemIds.CropWheat, 2);
         await world.MoveToAsync(new MoveToParams(ItemIds.MerchantPos.X, ItemIds.MerchantPos.Y));
         var fail = await world.SellItemAsync(new SellItemParams(ItemIds.CropWheat, 1));
         Assert.False(fail.Success);
         Assert.True(fail.Extra?.ContainsKey("needConfirm"));
-    }
-
-    [Fact]
-    public async Task Blocks_agent_in_manual_mode()
-    {
-        var world = new GameWorld();
-        world.SetManualMode(true);
-        var r = await world.MoveToAsync(new MoveToParams(100, 100));
-        Assert.False(r.Success);
-        Assert.Equal("manual_mode", r.Message);
     }
 }

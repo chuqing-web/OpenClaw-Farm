@@ -22,6 +22,16 @@ public sealed class Inventory
 
     public int GetCount(string itemId) => _items.GetValueOrDefault(itemId);
 
+    public const int MaxStackPerItem = 500;
+
+    public bool TryAddItem(string itemId, int count)
+    {
+        if (count <= 0) return true;
+        if (GetCount(itemId) + count > MaxStackPerItem) return false;
+        AddItem(itemId, count);
+        return true;
+    }
+
     public void AddItem(string itemId, int count)
     {
         if (count <= 0) return;
@@ -39,4 +49,14 @@ public sealed class Inventory
     }
 
     public void AddGold(int amount) => Gold += amount;
+
+    public void SetGold(int amount) => Gold = Math.Max(0, amount);
+
+    public void LoadFrom(int gold, Dictionary<string, int> items)
+    {
+        Gold = gold;
+        _items.Clear();
+        foreach (var (id, count) in items)
+            if (count > 0) _items[id] = count;
+    }
 }

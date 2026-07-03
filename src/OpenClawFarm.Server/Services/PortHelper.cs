@@ -16,6 +16,10 @@ public static class PortHelper
             Thread.Sleep(300);
     }
 
+    /// <summary>退出时释放端口，避免残留进程占用 28080。</summary>
+    public static void Shutdown(int port = GamePort) =>
+        FreePort(port, excludePid: null, onlyFarmServer: true);
+
     private static int FreePort(int port, int? excludePid, bool onlyFarmServer)
     {
         var killed = 0;
@@ -37,7 +41,8 @@ public static class PortHelper
         {
             using var p = Process.GetProcessById(pid);
             var name = p.ProcessName;
-            return name.Equals("OpenClawFarm.Server", StringComparison.OrdinalIgnoreCase)
+            return name.Equals("OpenClawFarm", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("OpenClawFarm.Server", StringComparison.OrdinalIgnoreCase)
                 || (name.Equals("dotnet", StringComparison.OrdinalIgnoreCase)
                     && (p.MainModule?.FileName?.Contains("OpenClawFarm", StringComparison.OrdinalIgnoreCase) ?? false));
         }

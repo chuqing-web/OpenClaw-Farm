@@ -27,15 +27,23 @@ public sealed class Merchant
         return d.Year * 10000 + d.Month * 100 + d.Day;
     }
 
+    public double PriceMultiplier => _priceMultiplier;
+
     public Dictionary<string, int> GetPrices()
     {
         var prices = new Dictionary<string, int>();
-        foreach (var (crop, basePrice) in ItemIds.CropBasePrices)
-            prices[crop] = (int)Math.Round(basePrice * _priceMultiplier);
+        foreach (var (itemId, basePrice) in ItemIds.CropBasePrices)
+        {
+            if (!ItemIds.IsSellable(itemId)) continue;
+            prices[itemId] = (int)Math.Round(basePrice * _priceMultiplier);
+        }
         return prices;
     }
 
     public int GetPrice(string itemId) => GetPrices().GetValueOrDefault(itemId);
 
-    public static bool IsCrop(string itemId) => itemId.StartsWith("crop_", StringComparison.Ordinal);
+    public static bool IsCrop(string itemId) => ItemIds.GetMarketCategory(itemId) == "crop";
+
+    public static bool IsSellable(string itemId) => ItemIds.IsSellable(itemId);
 }
+

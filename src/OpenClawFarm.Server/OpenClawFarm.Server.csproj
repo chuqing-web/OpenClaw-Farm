@@ -1,14 +1,108 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+
+
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+
+    <TargetFramework>net8.0-windows</TargetFramework>
+
+    <OutputType>WinExe</OutputType>
+
+    <UseWindowsForms>true</UseWindowsForms>
+
     <ImplicitUsings>enable</ImplicitUsings>
+
     <Nullable>enable</Nullable>
+
     <RootNamespace>OpenClawFarm.Server</RootNamespace>
+
+    <AssemblyName>OpenClawFarm</AssemblyName>
+
+    <StartupObject>OpenClawFarm.Server.GameEntry</StartupObject>
+
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <UseAppHost>true</UseAppHost>
+
+    <!-- VS F5 使用 Executable 配置时，executablePath 相对 $(OutDir)，只需文件名 -->
+
+    <DebugLaunchSettingsDirectory>$(OutDir)</DebugLaunchSettingsDirectory>
+
   </PropertyGroup>
 
+
+
   <ItemGroup>
-    <ProjectReference Include="..\OpenClawFarm.Core\OpenClawFarm.Core.csproj" />
+
+    <Content Update="wwwroot\**\*.*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+
   </ItemGroup>
 
+
+
+  <ItemGroup>
+
+    <ProjectReference Include="..\OpenClawFarm.Core\OpenClawFarm.Core.csproj" />
+
+  </ItemGroup>
+
+
+
+  <!-- 每次构建后写入带绝对路径的 launchSettings，避免 VS 路径拼接 / JSON \b 转义问题 -->
+
+  <Target Name="WriteLaunchSettings" AfterTargets="Build">
+
+    <PropertyGroup>
+
+      <_LaunchExe>$([System.IO.Path]::GetFullPath('$(TargetDir)$(AssemblyName).exe'))</_LaunchExe>
+
+      <_LaunchDir>$([System.IO.Path]::GetFullPath('$(TargetDir)'))</_LaunchDir>
+
+      <_LaunchExeJson>$([System.String]::Copy('$(_LaunchExe)').Replace('\', '/'))</_LaunchExeJson>
+
+      <_LaunchDirJson>$([System.String]::Copy('$(_LaunchDir)').Replace('\', '/'))</_LaunchDirJson>
+
+    </PropertyGroup>
+
+    <WriteLinesToFile
+
+      File="$(MSBuildProjectDirectory)/Properties/launchSettings.json"
+
+      Overwrite="true"
+
+      Encoding="UTF-8"
+
+      Lines="{
+
+  &quot;profiles&quot;: {
+
+    &quot;OpenClawFarm&quot;: {
+
+      &quot;commandName&quot;: &quot;Executable&quot;,
+
+      &quot;executablePath&quot;: &quot;$(_LaunchExeJson)&quot;,
+
+      &quot;workingDirectory&quot;: &quot;$(_LaunchDirJson)&quot;,
+
+      &quot;launchBrowser&quot;: false,
+
+      &quot;environmentVariables&quot;: {
+
+        &quot;ASPNETCORE_ENVIRONMENT&quot;: &quot;Development&quot;
+
+      }
+
+    }
+
+  }
+
+}" />
+
+    <Message Importance="high" Text="[OpenClawFarm] Debug exe: $(_LaunchExeJson)" />
+
+  </Target>
+
+
+
 </Project>
+

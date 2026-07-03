@@ -10,7 +10,27 @@ public static class WorldMapData
     public static readonly int Width = ItemIds.MapWidth;
     public static readonly int Height = ItemIds.MapHeight;
 
-    private static readonly string[,] Tiles = Generate();
+    /// <summary>Chopped trees become walkable stumps.</summary>
+    public static Func<int, int, bool>? IsTreeChopped;
+
+    /// <summary>Player-built fences block movement.</summary>
+    public static Func<int, int, bool>? BlocksMovement;
+
+    private static readonly string[,] Tiles;
+    private static readonly List<(int X, int Y)> TreePositions;
+
+    static WorldMapData()
+    {
+        (Tiles, TreePositions) = Generate();
+    }
+
+    public static IReadOnlyList<(int X, int Y)> GetTreePositions() => TreePositions;
+
+    public static string GetBaseTile(int tx, int ty)
+    {
+        if (tx < 0 || ty < 0 || tx >= Width || ty >= Height) return "void";
+        return Tiles[tx, ty];
+    }
 
     public static (int X, int Y) MerchantPixel => ItemIds.TileToPixel(30, 15);
     public static (int X, int Y) WellPixel => ItemIds.TileToPixel(34, 12);
@@ -31,8 +51,11 @@ public static class WorldMapData
     public static bool IsWalkable(int tx, int ty)
     {
         if (tx < 0 || ty < 0 || tx >= Width || ty >= Height) return false;
+        if (BlocksMovement?.Invoke(tx, ty) == true) return false;
         var t = Tiles[tx, ty];
-        return t is "grass" or "path" or "bridge" or "soil";
+        if (t == "tree")
+            return IsTreeChopped?.Invoke(tx, ty) == true;
+        return t is "grass" or "path" or "bridge" or "soil" or "flower" or "stump";
     }
 
     public static bool IsWater(int tx, int ty)
@@ -41,9 +64,10 @@ public static class WorldMapData
         return Tiles[tx, ty] == "water";
     }
 
-    private static string[,] Generate()
+    private static (string[,] Map, List<(int X, int Y)> Trees) Generate()
     {
         var m = new string[Width, Height];
+        var trees = new List<(int, int)>();
         for (var y = 0; y < Height; y++)
         for (var x = 0; x < Width; x++)
             m[x, y] = "grass";
@@ -58,6 +82,11 @@ public static class WorldMapData
         CarvePath(m, 14, 13, 22, 15);
         CarvePath(m, 22, 15, 30, 15);
         CarvePath(m, 30, 15, 34, 12);
+
+        // Forest paths (west grove → mine approach)
+        CarvePath(m, 7, 9, 2, 12);
+        CarvePath(m, 2, 12, 2, 22);
+        CarvePath(m, 2, 12, 6, 12);
 
         // Main plaza
         for (var y = 14; y <= 16; y++)
@@ -90,11 +119,25 @@ public static class WorldMapData
         m[FarmOriginX - 1, FarmOriginY - 1] = "grass";
         m[FarmOriginX + FarmCols, FarmOriginY + 1] = "grass";
 
-        // Trees & flowers (decorative walkable grass kept, trees block)
-        int[] treeXs = [2, 3, 18, 19, 25, 26, 38, 39];
-        int[] treeYs = [8, 20, 5, 22, 8, 24, 12, 18];
+        // Western forest grove
+        for (var y = 4; y <= 21; y++)
+        for (var x = 0; x <= 6; x++)
+        {
+            if (m[x, y] != "grass") continue;
+            if ((x + y * 2) % 5 != 0) continue;
+            m[x, y] = "tree";
+            trees.Add((x, y));
+        }
+
+        // Scattered trees elsewhere
+        int[] treeXs = [18, 19, 25, 26, 38, 39];
+        int[] treeYs = [5, 22, 8, 24, 12, 18];
         for (var i = 0; i < treeXs.Length; i++)
-            if (m[treeXs[i], treeYs[i]] == "grass") m[treeXs[i], treeYs[i]] = "tree";
+        {
+            if (m[treeXs[i], treeYs[i]] != "grass") continue;
+            m[treeXs[i], treeYs[i]] = "tree";
+            trees.Add((treeXs[i], treeYs[i]));
+        }
 
         int[] flowerXs = [8, 16, 23, 27, 31];
         int[] flowerYs = [8, 17, 12, 18, 8];
@@ -105,7 +148,7 @@ public static class WorldMapData
         m[30, 14] = "path";
         m[31, 14] = "path";
 
-        return m;
+        return (m, trees);
     }
 
     private static void CarvePath(string[,] m, int x0, int y0, int x1, int y1)

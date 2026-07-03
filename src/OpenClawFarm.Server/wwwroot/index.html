@@ -9,7 +9,22 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <div id="game-root">
+  <div id="title-screen">
+    <div class="title-card">
+      <div class="title-logo">🌾</div>
+      <h1>OpenClaw Farm</h1>
+      <p class="title-sub">AI 托管农场 · Agent 观战</p>
+      <div class="title-actions">
+        <button id="btn-new-game" class="title-btn primary">开始游戏</button>
+        <button id="btn-continue" class="title-btn secondary" disabled>继续游戏</button>
+      </div>
+      <p id="save-info" class="save-info"></p>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <div id="game-root" class="hidden">
     <div id="top-bar">
       <div class="brand">
         <span class="logo">🌾</span>
@@ -18,19 +33,20 @@
       <div class="stats">
         <div class="stat-pill gold-pill"><span class="icon">💰</span><span id="gold">0</span></div>
         <div class="stat-pill time-pill"><span class="icon">🕐</span><span id="game-time">08:00</span></div>
-        <div class="stat-pill" id="mode-pill"><span class="icon">🎮</span><span id="mode-label">手动模式</span></div>
+        <div class="stat-pill"><span class="icon">🌤️</span><span id="season-label">spring</span></div>
+        <div class="stat-pill"><span class="icon">🏆</span><span id="progress-pct">0%</span></div>
+        <div id="economy-bar" class="economy-bar"></div>
       </div>
-      <label class="agent-toggle" title="关闭后 Agent 可接管农场">
-        <input type="checkbox" id="manual-mode" checked />
-        <span>手动游玩</span>
-      </label>
+      <div id="agent-status" class="agent-status">
+        <span id="activity-label">👁️ Agent 观战中</span>
+        <span id="next-hint" class="next-hint"></span>
+      </div>
     </div>
 
     <div id="main-stage">
       <div id="canvas-wrap">
-        <canvas id="game" width="960" height="640" tabindex="0"></canvas>
-        <div id="toast"></div>
-        <div id="action-hint">WASD 移动 · 左键点击移动 · E 交互 · 1-8 切换工具</div>
+        <canvas id="game" width="960" height="640"></canvas>
+        <div id="action-hint">平滑观战 · 地图 POI 标记 · 活动动画</div>
       </div>
 
       <aside id="side-panel">
@@ -39,23 +55,47 @@
           <div id="bag-grid" class="item-grid"></div>
         </section>
         <section class="panel">
-          <h3>📋 今日订单</h3>
+          <h3>📋 订单</h3>
           <ul id="order-list" class="order-list"></ul>
+          <ul id="cross-order-list" class="order-list cross-orders"></ul>
         </section>
         <section class="panel">
-          <h3>🏪 收购价</h3>
+          <h3>🏪 商人</h3>
+          <div id="merchant-tabs" class="merchant-tabs"></div>
           <ul id="price-list" class="price-list"></ul>
+        </section>
+        <section class="panel">
+          <h3>🏆 通关进度</h3>
+          <ul id="victory-list" class="order-list"></ul>
+        </section>
+        <section class="panel">
+          <h3>🎖️ 成就</h3>
+          <div id="achievement-summary" class="item-cell">0 / 0</div>
+        </section>
+        <section class="panel mini-panel">
+          <h3>🌲 树林 / 建造</h3>
+          <div id="forest-status" class="item-cell">—</div>
+          <ul id="forest-nearby" class="order-list"></ul>
+          <div id="construction-status" class="item-cell dim">—</div>
+        </section>
+        <section class="panel mini-panel">
+          <h3>⛏️ 挖矿 / Boss</h3>
+          <div id="mine-status" class="item-cell">地面</div>
+          <div id="boss-status" class="item-cell dim"></div>
+        </section>
+        <section class="panel mini-panel">
+          <h3>🐟 图鉴</h3>
+          <div id="codex-grid" class="item-grid codex-grid"></div>
+        </section>
+        <section class="panel mini-panel">
+          <h3>🌸 装饰</h3>
+          <div id="decor-list" class="order-list"></div>
         </section>
         <section class="panel mini-panel">
           <h3>🗺️ 小地图</h3>
-          <canvas id="minimap" width="160" height="120"></canvas>
+          <canvas id="minimap" width="200" height="150"></canvas>
         </section>
       </aside>
-    </div>
-
-    <div id="hotbar">
-      <div id="hotbar-slots"></div>
-      <div id="hotbar-hint">靠近地块：洒水/播种/收割 · 水井：补水 · 商人：出售</div>
     </div>
   </div>
   <script src="/client.js"></script>
